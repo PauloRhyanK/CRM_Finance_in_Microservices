@@ -1,0 +1,67 @@
+services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-service
+      - customer-service
+      - product-service
+      - interaction-service
+    networks:
+      - crm-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    expose:
+      - "8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - crm-network
+
+  customer-service:
+    build:
+      context: ./customer-service
+      dockerfile: Dockerfile
+    container_name: customer-service
+    expose:
+      - "8002"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - crm-network
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    expose:
+      - "8003"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - crm-network
+
+  interaction-service:
+    build:
+      context: ./interaction-service
+      dockerfile: Dockerfile
+    container_name: interaction-service
+    expose:
+      - "8004"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - crm-network
+
+networks:
+  crm-network:
+    driver: bridge
