@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: ../gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - user-service
+      - product-service
+      - order-service
+
+  auth-service:
+    build:
+      context: ../services/auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5000"
+
+  user-service:
+    build:
+      context: ../services/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5000"
+
+  product-service:
+    build:
+      context: ../services/product-service
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5000"
+
+  order-service:
+    build:
+      context: ../services/order-service
+      dockerfile: Dockerfile
+    ports:
+      - "5004:5000"
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
