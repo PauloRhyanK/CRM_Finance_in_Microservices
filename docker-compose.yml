@@ -1,0 +1,50 @@
+# /docker-compose.yml
+version: '3.8'
+
+services:
+  # --- SERVIÇO DE AUTENTICAÇÃO ---
+  auth-service:
+    build:
+      context: .services/auth-service  
+    container_name: auth_service
+    restart: unless-stopped
+    ports:
+      - "5001:5000" 
+    env_file: .env 
+    environment:
+      - AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@auth-db:5432/${AUTH_DB_NAME}
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    networks:
+      - crm_network
+
+  # --- BANCO DE DADOS DE AUTENTICAÇÃO ---
+  auth-db:
+    image: postgres:16-alpine
+    container_name: auth_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AUTH_DB_NAME}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${AUTH_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crm_network
+
+
+volumes:
+  auth_postgres_data: # Um volume separado para este banco
+
+networks:
+  crm_network:
+    driver: bridge
