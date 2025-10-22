@@ -13,8 +13,7 @@ services:
       - AUTH_SERVICE_URL=http://auth-service:5000
       - CUSTOMER_SERVICE_URL=http://customer-service:5000
       - PRODUCT_SERVICE_URL=http://product-service:5000
-      # O Gateway encaminha para o Interaction Service usando a URL base dele
-      - INTERACTION_SERVICE_URL=http://interaction-service:5000 
+      - INTERACTION_SERVICE_URL=http://interaction-service:5000
     depends_on:
       - auth-service
       - customer-service
@@ -29,9 +28,7 @@ services:
       context: ./services/auth-service
     container_name: auth_service
     restart: unless-stopped
-    # ports: # NÃO exponha mais a porta 5001 diretamente! O Gateway cuida disso.
-    #  - "5001:5000" 
-    env_file: .env 
+    env_file: .env
     environment:
       - AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@auth-db:5432/${AUTH_DB_NAME}
     depends_on:
@@ -42,20 +39,31 @@ services:
   # --- BANCO DE DADOS DE AUTENTICAÇÃO ---
   auth-db:
     image: postgres:16-alpine
-    # ... (configuração igual) ...
-    # ports: # Não precisa expor a porta do DB para fora em produção, mas útil para debug
-    #  - "5433:5432"
+    container_name: auth_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AUTH_DB_NAME}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${AUTH_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - crm_network
-      
+
   # --- SERVIÇO DE CLIENTES ---
   customer-service:
     build:
       context: ./services/customer-service
     container_name: customer_service
     restart: unless-stopped
-    # ports: # Remover exposição direta
-    #  - "5002:5000"
     env_file: .env
     environment:
       - CUSTOMER_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@customer-db:5432/${CUSTOMER_DB_NAME}
@@ -67,7 +75,22 @@ services:
   # --- BANCO DE DADOS DE CLIENTES ---
   customer-db:
     image: postgres:16-alpine
-    # ... (configuração igual) ...
+    container_name: customer_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${CUSTOMER_DB_NAME}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
+    volumes:
+      - customer_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432" # <- Porta externa correta
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${CUSTOMER_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - crm_network
 
@@ -77,8 +100,6 @@ services:
       context: ./services/product-service
     container_name: product_service
     restart: unless-stopped
-    # ports: # Remover exposição direta
-    #  - "5003:5000"
     env_file: .env
     environment:
       - PRODUCT_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@product-db:5432/${PRODUCT_DB_NAME}
@@ -90,7 +111,22 @@ services:
   # --- BANCO DE DADOS DE PRODUTOS ---
   product-db:
     image: postgres:16-alpine
-    # ... (configuração igual) ...
+    container_name: product_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${PRODUCT_DB_NAME}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
+    volumes:
+      - product_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432" # <- Porta externa correta
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${PRODUCT_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - crm_network
 
@@ -100,8 +136,6 @@ services:
       context: ./services/interaction-service
     container_name: interaction_service
     restart: unless-stopped
-    # ports: # Remover exposição direta
-    #  - "5004:5000"
     env_file: .env
     environment:
       - INTERACTION_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@interaction-db:5432/${INTERACTION_DB_NAME}
@@ -115,15 +149,33 @@ services:
   # --- BANCO DE DADOS DE INTERAÇÕES ---
   interaction-db:
     image: postgres:16-alpine
-    # ... (configuração igual) ...
+    container_name: interaction_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${INTERACTION_DB_NAME}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
+    volumes:
+      - interaction_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432" # <- Porta externa correta
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${INTERACTION_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - crm_network
+
+# --- Volumes Persistentes ---
 volumes:
   auth_postgres_data:
   customer_postgres_data:
   product_postgres_data:
-  interaction_postgres_data: # Adicione esta linha
+  interaction_postgres_data:
 
+# --- Rede Compartilhada ---
 networks:
   crm_network:
     driver: bridge

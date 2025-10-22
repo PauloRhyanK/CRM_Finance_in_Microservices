@@ -1,52 +1,47 @@
-# /interaction-service/app/models.py
-import enum
-from . import db
-from sqlalchemy import Numeric
-from sqlalchemy.dialects.postgresql import UUID
-import uuid
+from enum import Enum as PyEnum
 from datetime import datetime
+from . import db
 
-# --- Modelo de Interação ---
-class InteractionType(enum.Enum):
-    VENDA = 'venda'
-    LIGACAO = 'ligacao'
+class InteractionType(PyEnum):
     EMAIL = 'email'
-    REUNIAO = 'reuniao'
-    CONTATO = 'contato'
+    CALL = 'call'
+    MEETING = 'meeting'
+    NOTE = 'note'
+
+class TransactionType(PyEnum):
+    SALE = 'sale'
+    REFUND = 'refund'
+    PAYMENT = 'payment'
+    CREDIT = 'credit'
 
 class Interaction(db.Model):
-    __tablename__ = 'interaction'
-    cd_interaction = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    ds_notes = db.Column(db.Text, nullable=False)
-    id_interaction_type = db.Column(
-        db.Enum(InteractionType, values_callable=lambda obj: [e.value for e in obj]),
-        nullable=False,
-        default=InteractionType.CONTATO
-    )
-    dt_interaction = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    dt_created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    dt_updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    __tablename__ = 'interactions'
     
-    # Chaves "estrangeiras" para outros serviços
-    cd_customer = db.Column(UUID(as_uuid=True), nullable=False, index=True)
-    cd_user = db.Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, nullable=False, index=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    interaction_type = db.Column(db.Enum(InteractionType), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    interaction_date = db.Column(db.DateTime, default=datetime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime, onupdate=datetime)
 
-# --- Modelo de Transação ---
-class TransactionType(enum.Enum):
-    ENTRADA = 1
-    SAIDA = 2
+    def __repr__(self):
+        return f'<Interaction {self.id} - {self.interaction_type.value}>'
 
 class Transaction(db.Model):
-    __tablename__ = 'transaction'
-    cd_transaction = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    vr_transaction = db.Column(Numeric(10, 2), nullable=False)
-    id_transaction_type = db.Column(
-        db.Enum(TransactionType, values_callable=lambda obj: [e.value for e in obj]),
-        nullable=False
-    )
-    dt_transaction = db.Column(db.Date, nullable=False)
-    dt_transaction_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    __tablename__ = 'transactions'
     
-    # Chaves "estrangeiras" para outros serviços
-    cd_customer = db.Column(UUID(as_uuid=True), nullable=False, index=True)
-    cd_user = db.Column(UUID(as_uuid=True), nullable=False, index=True)
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, nullable=False, index=True)
+    product_id = db.Column(db.Integer, nullable=True)
+    transaction_type = db.Column(db.Enum(TransactionType), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    description = db.Column(db.String(255))
+    transaction_date = db.Column(db.DateTime, default=datetime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime, onupdate=datetime)
+
+    def __repr__(self):
+        return f'<Transaction {self.id} - {self.transaction_type.value} - ${self.amount}>'
