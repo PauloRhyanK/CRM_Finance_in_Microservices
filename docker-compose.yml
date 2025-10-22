@@ -119,10 +119,55 @@ services:
     networks:
       - crm_network
 
+
+# --- SERVIÇO DE INTERAÇÕES ---
+  interaction-service:
+    build:
+      context: ./interaction-service
+    container_name: interaction_service
+    restart: unless-stopped
+    ports:
+      - "5004:5000" # Mapeia para a porta 5004
+    env_file: .env
+    environment:
+      - INTERACTION_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@interaction-db:5432/${INTERACTION_DB_NAME}
+      # A MÁGICA ACONTECE AQUI: informando a este serviço o endereço dos outros
+      - CUSTOMER_SERVICE_URL=http://customer-service:5000
+    depends_on:
+      interaction-db:
+        condition: service_healthy
+      customer-service: # Depende do serviço de cliente estar de pé
+        condition: service_started
+    networks:
+      - crm_network
+
+  # --- BANCO DE DADOS DE INTERAÇÕES E TRANSAÇÕES ---
+  interaction-db:
+    image: postgres:16-alpine
+    container_name: interaction_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${INTERACTION_DB_NAME}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
+    volumes:
+      - interaction_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432" # Mapeia para a porta 5436
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${INTERACTION_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crm_network
+
 volumes:
   auth_postgres_data:
   customer_postgres_data:
-  product_postgres_data: 
+  product_postgres_data:
+  interaction_postgres_data: # Adicione esta linha
 
 networks:
   crm_network:

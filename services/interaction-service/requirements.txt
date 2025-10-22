@@ -1,0 +1,21 @@
+# /interaction-service/requirements.txt
+
+# ---- Framework ----
+Flask==3.1.2
+# ... (outras dependências do Flask)
+Werkzeug==3.1.3
+
+# ---- Comunicação HTTP ----
+requests==2.32.4
+
+# ---- Banco de Dados e ORM ----
+Flask-SQLAlchemy==3.1.1
+# ... (outras dependências de DB)
+psycopg2-binary==2.9.11
+
+# ---- Validação e Serialização ----
+flask-marshmallow==1.2.1
+# ... (outras dependências do Marshmallow)
+
+# ---- Configuração ----
+python-dotenv==1.1.1
