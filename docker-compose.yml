@@ -45,7 +45,7 @@ services:
 # --- SERVIÇO DE CLIENTES ---
   customer-service:
     build:
-      context: ./customer-service
+      context: .services/customer-service
     container_name: customer_service
     restart: unless-stopped
     ports:
@@ -83,7 +83,7 @@ services:
 # --- SERVIÇO DE PRODUTOS ---
   product-service:
     build:
-      context: ./product-service
+      context: .services/product-service
     container_name: product_service
     restart: unless-stopped
     ports:
@@ -123,7 +123,7 @@ services:
 # --- SERVIÇO DE INTERAÇÕES ---
   interaction-service:
     build:
-      context: ./interaction-service
+      context: .services/interaction-service
     container_name: interaction_service
     restart: unless-stopped
     ports:
