@@ -130,36 +130,60 @@ Pré-requisitos: **Docker** e **Docker Compose** instalados.
 
     ⚠️ **Importante:** Revise o ficheiro `.env` e defina valores seguros para `SECRET_KEY` e `JWT_SECRET_KEY`. As outras variáveis (nomes de DB, user, password) podem ser mantidas como estão para desenvolvimento.
 
-3.  **Suba todos os contêineres:**
-    Este comando irá construir as imagens de todos os serviços (se ainda não existirem) e iniciar todos os contêineres (Gateway, 4 Serviços, 4 Bancos de Dados).
+
+3.  **Primeira vez no projeto (ou depois de apagar tudo):**
 
     ```bash
-    docker-compose up --build -d
+    make setup
     ```
 
-4.  **Execute as migrações para CADA serviço:**
-    É necessário aplicar o esquema inicial do banco de dados para cada microserviço individualmente. Execute os seguintes comandos **um por um**:
+    *(Este comando faz tudo, do início ao fim. Depois dele, sua aplicação estará 100% funcional com os bancos de dados prontos).*
 
-      * **Auth Service:**
-        ```bash
-        docker-compose exec -e FLASK_APP=manage.py auth-service flask db upgrade
-        ```
-      * **Customer Service:**
-        ```bash
-        docker-compose exec -e FLASK_APP=manage.py customer-service flask db upgrade
-        ```
-      * **Product Service:**
-        ```bash
-        docker-compose exec -e FLASK_APP=manage.py product-service flask db upgrade
-        ```
-      * **Interaction Service:**
-        ```bash
-        docker-compose exec -e FLASK_APP=manage.py interaction-service flask db upgrade
-        ```
 
-    *(Nota: Os comandos `db init` e `db migrate` só são necessários se você fizer alterações nos modelos de dados).*
+## MakeFile
+  * **`make up`**: Inicia tudo (equivalente a `docker-compose up --build -d`).
+  * **`make down`**: Para e remove tudo, incluindo volumes (`docker-compose down -v`).
+  * **`make setup`**: **Este é o comando mágico para a primeira vez\!** Ele faz tudo:
+    1.  `down`: Garante que tudo está parado e limpo.
+    2.  `up`: Constrói e inicia todos os contêineres.
+    3.  `wait-for-dbs`: Espera um pouco para os bancos de dados iniciarem (ajuste o `sleep` se necessário).
+    4.  `migrate-all`: Executa `init`, `migrate` e `upgrade` para **todos** os seus serviços automaticamente. O `|| true` ignora erros se a pasta `migrations` já existir (no `init`) ou se não houver mudanças (no `migrate`).
+  * **`make migrate service=<nome> m="msg"`**: Atalho para gerar uma *nova* migração depois que você alterar um modelo (ex: `make migrate service=customer-service m="Adiciona campo NIF"`).
+  * **`make upgrade service=<nome>`**: Atalho para aplicar as migrações pendentes num serviço específico.
+  * **`make upgrade-all`**: Aplica migrações pendentes em *todos* os serviços.
 
-5.  **Pronto\!** A API estará disponível através do API Gateway no endereço **`http://localhost:8080`**.
+**Fluxo de Trabalho:**
+
+1.  **Primeira vez no projeto (ou depois de apagar tudo):**
+
+    ```bash
+    make setup
+    ```
+
+    *(Este comando faz tudo, do início ao fim. Depois dele, sua aplicação estará 100% funcional com os bancos de dados prontos).*
+
+2.  **Para iniciar o trabalho num dia normal:**
+
+    ```bash
+    make up
+    ```
+
+    *(Apenas inicia os contêineres. O banco de dados já estará pronto da vez anterior).*
+
+3.  **Para parar tudo:**
+
+    ```bash
+    make down
+    ```
+
+4.  **Quando você alterar um `models.py`:**
+
+    ```bash
+    make migrate service=nome-do-servico m="Sua mensagem descritiva"
+    make upgrade service=nome-do-servico
+    ```
+
+**Pronto\!** A API estará disponível através do API Gateway no endereço **`http://localhost:8080`**.
 
 ## 🚀 Endpoints da API
 
