@@ -46,7 +46,6 @@ migrate-interaction:
 	docker-compose exec interaction-service python manage.py db init || true
 	docker-compose exec interaction-service python manage.py db migrate -m "Init interaction schema" || true
 	docker-compose exec interaction-service python manage.py db upgrade
-
 # --- Alvo para gerar NOVAS migrações (quando você alterar models.py) ---
 # Uso: make migrate service=customer-service m="Sua mensagem aqui"
 migrate: check-args

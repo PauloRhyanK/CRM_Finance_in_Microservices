@@ -19,7 +19,6 @@ class Product(db.Model):
     
     vr_price = db.Column(Numeric(10, 2), CheckConstraint('vr_price >= 0'), nullable=False)
     
-    # A correção para o Enum funcionar com PostgreSQL
     id_product_type = db.Column(
         db.Enum(ProductType, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,

@@ -14,7 +14,6 @@ def create_interaction(customer_id):
     if not data:
         return jsonify({'error': 'Dados não fornecidos'}), 400
     
-    # Assume que o API Gateway validou o token e injetou o ID do usuário
     user_id = request.headers.get('X-User-Id')
     if not user_id:
         return jsonify({'error': 'Não autorizado (ID de usuário ausente)'}), 401
@@ -43,4 +42,3 @@ def get_interactions(customer_id):
         'current_page': paginated.page
     }), 200
 
-# ... (Você pode adicionar os endpoints para Transações aqui, ex: POST /api/transactions)

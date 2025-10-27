@@ -6,5 +6,4 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = User
         load_instance = True
-        # Exclui o hash da senha de qualquer serialização
         exclude = ('password_hash',)

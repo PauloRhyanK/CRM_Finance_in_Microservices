@@ -27,8 +27,6 @@ def authenticate_user(form_data):
     if not user or not user.check_password(password):
         raise AuthenticationError()
     
-    # GERA O TOKEN! Esta é a mudança crucial.
-    # O token expira em 24 horas.
     expires = timedelta(hours=24)
     access_token = create_access_token(
         identity=str(user.cd_user), 

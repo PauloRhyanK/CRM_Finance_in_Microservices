@@ -37,20 +37,20 @@ def gateway(path):
     
     if path.startswith('auth'):
         service_name = 'auth'
-        service_path = '/'.join(parts[1:]) 
+        service_path = path 
     elif path.startswith('api/customers'):
         if len(parts) > 3 and parts[3] == 'interactions':
              # Rota aninhada: /api/customers/{id}/interactions -> interaction_service
              service_name = 'interactions'
              # O serviço de interação espera a rota no formato /{customer_id}/interactions
-             service_path = f"{parts[2]}/{'/'.join(parts[3:])}" 
+             service_path = path
         else:
              # Rota de cliente normal: /api/customers/... -> customer_service
              service_name = 'customers'
-             service_path = '/'.join(parts[2:]) # Remove 'api/customers'
+             service_path = path
     elif path.startswith('api/products'):
         service_name = 'products'
-        service_path = '/'.join(parts[2:]) # Remove 'api/products'
+        service_path = path
     
     if not service_name or service_name not in SERVICE_MAP:
         return jsonify({'error': 'Serviço não encontrado'}), 404
@@ -83,8 +83,8 @@ def gateway(path):
             headers=headers,
             data=request.get_data(),
             params=request.args,
-            stream=True, # Importante para lidar com grandes respostas
-            timeout=30 # Timeout de 30 segundos
+            stream=True,    # Importante para lidar com grandes respostas
+            timeout=30      # Timeout de 30 segundos
         )
 
         # 4. Retornar a resposta do microserviço para o cliente original
