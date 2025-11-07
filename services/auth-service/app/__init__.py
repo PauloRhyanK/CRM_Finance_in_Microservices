@@ -1,4 +1,4 @@
-# /auth-service/app/__init__.py
+# /services/auth-service/app/__init__.py (CORRIGIDO)
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -26,7 +26,11 @@ def create_app(config_object):
         response.status_code = error.status_code
         return response
 
-    from . import models
+    # --- IMPORTANTE: ADICIONE AS LINHAS ABAIXO ---
+    with app.app_context():
+        from . import models
+    # ---------------------------------------------
+
     from .routes import auth_bp
     app.register_blueprint(auth_bp)
 

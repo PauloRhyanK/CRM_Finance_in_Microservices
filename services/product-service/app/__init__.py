@@ -23,7 +23,8 @@ def create_app(config_object):
         response.status_code = error.status_code
         return response
 
-    from . import models
+    with app.app_context():
+        from . import models    
     from .routes import product_bp
     app.register_blueprint(product_bp)
 

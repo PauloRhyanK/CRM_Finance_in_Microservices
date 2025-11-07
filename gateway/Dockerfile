@@ -8,8 +8,8 @@ RUN pip install -r requirements.txt
 
 # Copia o código-fonte do gateway
 COPY config.py .
-COPY app.py .
+COPY run.py .
 
 EXPOSE 8080
 
-CMD ["python", "app.py"]
+CMD ["python", "run.py"]

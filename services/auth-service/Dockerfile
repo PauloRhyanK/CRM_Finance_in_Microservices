@@ -10,10 +10,10 @@ RUN pip install -r requirements.txt
 # Copia o código-fonte deste serviço
 COPY app/ ./app/
 COPY config.py .
-COPY app.py .
+COPY run.py .
 COPY manage.py .
 
 EXPOSE 5000
 
 # O comando para iniciar o servidor
-CMD ["python", "app.py"]
+CMD ["python", "run.py"]
