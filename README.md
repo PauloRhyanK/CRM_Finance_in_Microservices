@@ -225,3 +225,33 @@ Todas as requisições devem ser feitas para o API Gateway (`http://localhost:80
 | `GET`  | `/`                       | Lista interações do cliente com paginação.        | **Query:** `page`, `per_page`                        | `{ "interactions": [...], "total": ..., "pages": ... }`           |
 
 *(Nota: Os endpoints para `Transaction` não foram implementados nesta versão, mas a estrutura está pronta no `interaction-service` para adicioná-los futuramente).*
+
+```bash
+# Da primeira vez (Execute um de cada vez)
+docker compose exec auth-service flask db init
+docker compose exec auth-service flask db migrate -m "Init auth schema"
+
+docker compose exec customer-service flask db init
+docker compose exec customer-service flask db migrate -m "Init customer schema"
+docker compose exec product-service flask db init
+docker compose exec product-service flask db migrate -m "Init product schema"
+docker compose exec interaction-service flask db init
+docker compose exec interaction-service flask db migrate -m "Init interaction/transaction schema"
+
+# Pra rodar
+chmod +x init-db.sh
+docker-compose down -v
+docker-compose up --build -d
+# 1. Cria a tabela 'user' no 'auth-db'
+docker compose exec auth-service flask db upgrade
+
+# 2. Cria a tabela 'customer' no 'customer-db'
+docker compose exec customer-service flask db upgrade
+
+# 3. Cria a tabela 'product' no 'product-db'
+docker compose exec product-service flask db upgrade
+
+# 4. Cria as tabelas 'interaction' e 'transaction' no 'interaction-db'
+docker compose exec interaction-service flask db upgrade
+
+```
