@@ -1,3 +1,6 @@
+# /docker-compose.yml (VERSÃO SIMPLIFICADA)
+version: '3.8'
+
 services:
   # --- API GATEWAY (A ENTRADA PRINCIPAL) ---
   api-gateway:
@@ -6,10 +9,9 @@ services:
     container_name: api_gateway
     restart: unless-stopped
     ports:
-      - "8080:8080" # A porta principal da sua aplicação!
+      - "8080:8080"
     env_file: .env
     environment:
-      # Passando os endereços internos dos outros serviços
       - AUTH_SERVICE_URL=http://auth-service:5000
       - CUSTOMER_SERVICE_URL=http://customer-service:5000
       - PRODUCT_SERVICE_URL=http://product-service:5000
@@ -30,31 +32,10 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      - AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@auth-db:5432/${AUTH_DB_NAME}
+      # Aponta para o novo banco de dados central, mas para a DB específica
+      - AUTH_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${AUTH_DB_NAME}
     depends_on:
-      auth-db: { condition: service_healthy }
-    networks:
-      - crm_network
-
-  # --- BANCO DE DADOS DE AUTENTICAÇÃO ---
-  auth-db:
-    image: postgres:16-alpine
-    container_name: auth_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${AUTH_DB_NAME}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
-    volumes:
-      - auth_postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432" 
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${AUTH_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      postgres-db: { condition: service_healthy }
     networks:
       - crm_network
 
@@ -66,31 +47,10 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      - CUSTOMER_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@customer-db:5432/${CUSTOMER_DB_NAME}
+      # Aponta para o novo banco de dados central
+      - CUSTOMER_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${CUSTOMER_DB_NAME}
     depends_on:
-      customer-db: { condition: service_healthy }
-    networks:
-      - crm_network
-
-  # --- BANCO DE DADOS DE CLIENTES ---
-  customer-db:
-    image: postgres:16-alpine
-    container_name: customer_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${CUSTOMER_DB_NAME}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
-    volumes:
-      - customer_postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5434:5432" # <- Porta externa correta
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${CUSTOMER_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      postgres-db: { condition: service_healthy }
     networks:
       - crm_network
 
@@ -102,31 +62,10 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      - PRODUCT_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@product-db:5432/${PRODUCT_DB_NAME}
+      # Aponta para o novo banco de dados central
+      - PRODUCT_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${PRODUCT_DB_NAME}
     depends_on:
-      product-db: { condition: service_healthy }
-    networks:
-      - crm_network
-
-  # --- BANCO DE DADOS DE PRODUTOS ---
-  product-db:
-    image: postgres:16-alpine
-    container_name: product_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${PRODUCT_DB_NAME}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
-    volumes:
-      - product_postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5435:5432" # <- Porta externa correta
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${PRODUCT_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      postgres-db: { condition: service_healthy }
     networks:
       - crm_network
 
@@ -138,42 +77,41 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      - INTERACTION_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@interaction-db:5432/${INTERACTION_DB_NAME}
+      # Aponta para o novo banco de dados central
+      - INTERACTION_DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${INTERACTION_DB_NAME}
       - CUSTOMER_SERVICE_URL=http://customer-service:5000
     depends_on:
-      interaction-db: { condition: service_healthy }
+      postgres-db: { condition: service_healthy }
       customer-service: { condition: service_started }
     networks:
       - crm_network
 
-  # --- BANCO DE DADOS DE INTERAÇÕES ---
-  interaction-db:
-    image: postgres:16-alpine
-    container_name: interaction_db
+  # --- BANCO DE DADOS CENTRAL (ÚNICO) ---
+  postgres-db:
+    image: postgres:16 # Usando a imagem completa
+    container_name: postgres_db
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${INTERACTION_DB_NAME}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=pt_BR.UTF-8"
-    volumes:
-      - interaction_postgres_data:/var/lib/postgresql/data
+    env_file: .env # Carrega POSTGRES_USER, POSTGRES_PASSWORD, etc.
     ports:
-      - "5436:5432" # <- Porta externa correta
+      - "5432:5432" # Expõe a porta padrão do Postgres
+    volumes:
+      # Monta o script de inicialização para ser executado na primeira vez
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      # Volume persistente para todos os dados do banco
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${INTERACTION_DB_NAME}"]
+      # O healthcheck agora só precisa de verificar se o usuário 'postgres' pode conectar
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s # Período de tolerância para o arranque
     networks:
       - crm_network
 
-# --- Volumes Persistentes ---
+# --- Volumes Persistentes (Agora só um) ---
 volumes:
-  auth_postgres_data:
-  customer_postgres_data:
-  product_postgres_data:
-  interaction_postgres_data:
+  postgres_data:
 
 # --- Rede Compartilhada ---
 networks:

@@ -80,4 +80,4 @@ ifndef service
 	$(error service is undefined. Usage: make upgrade service=<service_name>)
 endif
 
-.PHONY: up down logs setup wait-for-dbs migrate-all migrate-auth migrate-customer migrate-product migrate-interaction migrate upgrade upgrade-all check-args check-service
+.PHONY: up down logs setup wait-for-dbs migrate-all migrate-auth migrate-customer migrate-product migrate-interaction migrate upgrade upgrade-all check-args check-service'''
